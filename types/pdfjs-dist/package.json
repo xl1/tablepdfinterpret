@@ -1,0 +1,8 @@
+{
+  "name": "@types/pdfjs-dist",
+  "version": "2.0.943",
+  "main": "",
+  "author": "",
+  "types": "index",
+  "license": "MIT"
+}
