@@ -1,8 +1,9 @@
 {
-  "compilerOptions": {
-    "target": "ES2017",
-    "module": "CommonJS",
-    "strict": true,
-    "outDir": "dist"
-  }
+    "compilerOptions": {
+        "target": "ES2017",
+        "module": "CommonJS",
+        "strict": true,
+        "sourceMap": true,
+        "outDir": "dist"
+    }
 }
