@@ -3,10 +3,12 @@ import * as pdfjs from 'pdfjs-dist';
 import { Edge, Rect, TextRect } from './models';
 import OPS from './ops';
 
-export default async function(source: Uint8Array): Promise<TextRect[]> {
+export default async function(source: Uint8Array, {
+    pageNumber = 1,
+} = {}): Promise<TextRect[]> {
     const
         pdf = await pdfjs.getDocument(source).promise,
-        page = await pdf.getPage(1),
+        page = await pdf.getPage(pageNumber),
         { fnArray, argsArray } = await page.getOperatorList(),
         { items } = await page.getTextContent(),
         lines = extractLines(fnArray, argsArray),
