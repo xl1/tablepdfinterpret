@@ -1,45 +1,19 @@
-import fetch from 'node-fetch';
 import { vec2, mat2d } from 'gl-matrix';
 import * as pdfjs from 'pdfjs-dist';
+import { Edge, Rect, TextRect } from './models';
 import OPS from './ops';
 
-const url = 'https://gist.githubusercontent.com/xl1/8356b0df9630c91191cd8886604fbecc/raw/test.pdf';
-
-async function main() {
-    const pdfData = await fetch(url).then(r => r.arrayBuffer());
-    console.log('fetched');
-
-    const pdf = await pdfjs.getDocument(new Uint8Array(pdfData)).promise;
-    const page = await pdf.getPage(1);
-    console.log('page loaded');
-
-    const { fnArray, argsArray } = await page.getOperatorList();
-    const { items } = await page.getTextContent();
-    const lines = extractLines(fnArray, argsArray);
-    const normalized = normalizeLines(lines);
-    const edges = separateToEdges(normalized);
-    const rects = buildRects(edges);
-    const annotatedRects = annotateRects(rects, items);
-
-    for (const rect of annotatedRects) {
-        console.log(...rect.lb, ...rect.rt, ...rect.strings);
-    }
-}
-
-main().catch(console.error);
-
-interface Edge {
-    start: vec2;
-    end: vec2;
-}
-
-interface Rect {
-    lb: vec2;
-    rt: vec2;
-}
-
-interface TextRect extends Rect {
-    strings: string[];
+export default async function(source: Uint8Array): Promise<TextRect[]> {
+    const
+        pdf = await pdfjs.getDocument(source).promise,
+        page = await pdf.getPage(1),
+        { fnArray, argsArray } = await page.getOperatorList(),
+        { items } = await page.getTextContent(),
+        lines = extractLines(fnArray, argsArray),
+        normalized = normalizeLines(lines),
+        edges = separateToEdges(normalized),
+        rects = buildRects(edges);
+    return [...annotateRects(rects, items)];
 }
 
 const EPSILON = 0.001;
