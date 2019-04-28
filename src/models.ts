@@ -10,6 +10,10 @@ export interface Rect {
     rt: vec2;
 }
 
-export interface TextRect extends Rect {
+export interface TextRect {
     strings: string[];
+    left: number;
+    bottom: number;
+    right: number;
+    top: number;
 }

@@ -126,7 +126,13 @@ function* annotateRects(rects: Iterable<Rect>, texts: pdfjs.TextContentItem[])
                 strings.push(text.str);
             }
         }
-        yield { strings, lb: rect.lb, rt: rect.rt };
+        yield {
+            strings,
+            left: rect.lb[0],
+            bottom: rect.lb[1],
+            right: rect.rt[0],
+            top: rect.rt[1],
+        };
     }
 }
 

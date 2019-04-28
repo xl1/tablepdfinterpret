@@ -8,7 +8,7 @@ async function main() {
     const rects = await convert(new Uint8Array(data));
     for (const rect of rects) {
         if (rect.strings.length) {
-            console.log(...rect.lb, ...rect.rt, ...rect.strings);
+            console.log(rect.left, rect.bottom, rect.right, rect.top, ...rect.strings);
         }
     }
 }
