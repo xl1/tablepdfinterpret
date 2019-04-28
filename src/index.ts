@@ -80,10 +80,9 @@ function separateToEdges(lines: Iterable<Edge>): Edge[] {
             const p = getCrossingPoint(e, c);
             if (p) {
                 // remove e from result
-                // add split(e) to result
-                // add split(c) to candidate
-                results.splice(i, 1, ...split(e, p));
-                return [split(c, p), results];
+                results.splice(i, 1);
+                // add split(e) and split(c) to candidates
+                return [split(e, p).concat(split(c, p)), results];
             }
         }
         results.push(c);
@@ -107,15 +106,13 @@ function separateToEdges(lines: Iterable<Edge>): Edge[] {
 function* buildRects(edges: Edge[]): IterableIterator<Rect> {
     for (const l1 of edges)
     for (const l2 of edges)
+    if (equals(l1.start, l2.start))
     for (const l3 of edges)
-    for (const l4 of edges) {
-        if (equals(l1.start, l2.start) &&
-            equals(l1.end, l3.start) &&
-            equals(l2.end, l4.start) &&
-            equals(l3.end, l4.end)) {
-            yield { lb: l1.start, rt: l4.end };
-        }
-    }
+    if (equals(l1.end, l3.start))
+    for (const l4 of edges)
+    if (equals(l2.end, l4.start))
+    if (equals(l3.end, l4.end))
+        yield { lb: l1.start, rt: l4.end };
 }
 
 function* annotateRects(rects: Iterable<Rect>, texts: pdfjs.TextContentItem[])
