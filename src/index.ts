@@ -3,11 +3,13 @@ import * as pdfjs from 'pdfjs-dist';
 import { Edge, Rect, TextRect } from './models';
 import OPS from './ops';
 
-export default async function(source: Uint8Array, {
+export default async function(source: Uint8Array|pdfjs.PDFDocumentProxy, {
     pageNumber = 1,
 } = {}): Promise<TextRect[]> {
     const
-        pdf = await pdfjs.getDocument(source).promise,
+        pdf = source instanceof Uint8Array
+            ? await pdfjs.getDocument(source).promise
+            : source,
         page = await pdf.getPage(pageNumber),
         { fnArray, argsArray } = await page.getOperatorList(),
         { items } = await page.getTextContent(),
