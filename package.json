@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "build:doc": "parcel build example/index.html -d docs --public-url .",
+    "build:pdfjs": "cp node_modules/pdfjs-dist/build/pdf.worker.js docs"
   },
-  "author": "",
+  "author": "xl1",
   "license": "MIT",
   "dependencies": {
     "gl-matrix": "^3.0.0",
@@ -14,9 +16,14 @@
     "pdfjs-dist": "^2.0.943"
   },
   "devDependencies": {
+    "@babel/core": "^7.4.4",
     "@types/gl-matrix": "^2.4.5",
     "@types/node-fetch": "^2.3.2",
     "@types/pdfjs-dist": "file:types/pdfjs-dist",
+    "parcel-bundler": "^1.12.3",
     "typescript": "^3.4.4"
-  }
+  },
+  "browserslist": [
+    "since 2019"
+  ]
 }
