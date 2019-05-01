@@ -169,17 +169,40 @@ function* extractLines(fnArray: OPS[], argsArray: any[]): IterableIterator<Edge>
                 }
                 currentPoint = p;
                 break;
+            case OPS.rectangle:
+                const [x, y, w, h] = args;
+                const p1 = vec(x + 0, y + 0);
+                const p2 = vec(x + w, y + 0);
+                const p3 = vec(x + 0, y + h);
+                const p4 = vec(x + y, w + h);
+                yield { start: p1, end: p2 };
+                yield { start: p1, end: p3 };
+                yield { start: p2, end: p4 };
+                yield { start: p3, end: p4 };
+                break;
             case OPS.constructPath:
-                const [subFn, subArgs] = args;
-                for (let j = 0; j < subFn.length; j++) {
-                    if (subFn[j] === OPS.moveTo) {
-                        currentPoint = vec(subArgs[j * 2], subArgs[j * 2 + 1]);
-                    } else if (subFn[j] === OPS.lineTo) {
-                        const p = vec(subArgs[j * 2], subArgs[j * 2 + 1]);
+                const subFn: OPS[] = [...args[0]]; // clone
+                const subArgs: number[] = [...args[1]]; // clone
+                let fn: OPS|undefined;
+                while (fn = subFn.shift()) {
+                    if (fn === OPS.moveTo) {
+                        currentPoint = vec(subArgs.shift()!, subArgs.shift()!);
+                    } else if (fn === OPS.lineTo) {
+                        const p = vec(subArgs.shift()!, subArgs.shift()!);
                         if (currentPoint) {
                             yield { start: currentPoint, end: p };
                         }
                         currentPoint = p;
+                    } else if (fn === OPS.rectangle) {
+                        const [x, y, w, h] = subArgs.splice(0, 4);
+                        const p1 = vec(x + 0, y + 0);
+                        const p2 = vec(x + w, y + 0);
+                        const p3 = vec(x + 0, y + h);
+                        const p4 = vec(x + y, w + h);
+                        yield { start: p1, end: p2 };
+                        yield { start: p1, end: p3 };
+                        yield { start: p2, end: p4 };
+                        yield { start: p3, end: p4 };
                     }
                 }
                 break;
