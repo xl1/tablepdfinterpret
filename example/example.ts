@@ -1,5 +1,9 @@
 import * as pdfjs from 'pdfjs-dist';
 import pdftorect from '../src/index';
+import xml from './xml';
+
+const svg = xml(key => document.createElementNS('http://www.w3.org/2000/svg', key));
+const html = xml(key => document.createElement(key));
 
 pdfjs.GlobalWorkerOptions.workerSrc = './pdf.worker.js';
 
@@ -17,7 +21,8 @@ const convert = {
 const fileInput = document.getElementById('fileInput') as HTMLInputElement;
 const pageNumber = document.getElementById('pageNumber') as HTMLInputElement;
 const loadButton = document.getElementById('loadButton') as HTMLInputElement;
-const canv = document.getElementById('canv') as HTMLCanvasElement;
+const canv = document.getElementById('canv') as HTMLDivElement;
+const tbody = document.getElementById('tbody') as HTMLTableSectionElement;
 
 loadButton.addEventListener('click', async e => {
     e.preventDefault();
@@ -28,24 +33,45 @@ loadButton.addEventListener('click', async e => {
         file = fileInput.files[0],
         ab = await convert.blobToArrayBufferAsync(file),
         pdf = await pdfjs.getDocument(new Uint8Array(ab)).promise,
+        page = await pdf.getPage(pageNum),
         rects = await pdftorect(pdf, { pageNumber: pageNum }),
-        viewport = (await pdf.getPage(pageNum)).getViewport(1);
+        view = page.getViewport(1),
+        svgRoot = svg.svg({
+            viewBox: `0 0 ${view.width} ${view.height}`,
+            style: `width: ${view.width}px; height: ${view.height}px`
+        });
 
-    canv.width = viewport.width;
-    canv.height = viewport.height;
-    const ctx = canv.getContext('2d')!;
-    ctx.textBaseline = 'top';
+    tbody.innerHTML = '';
+    canv.innerHTML = '';
+    canv.appendChild(svgRoot);
 
-    for (const rect of rects) {
+    for (let i = 0; i < rects.length; i++) {
         const
-            x = rect.left,
-            y = viewport.height - rect.top,
-            w = rect.right - rect.left,
-            h = rect.top - rect.bottom;
-        ctx.strokeStyle = 'rgba(0, 0, 255, 0.5)';
-        ctx.rect(x, y, w, h);
-        ctx.stroke();
-        ctx.strokeStyle = 'black';
-        ctx.strokeText(rect.strings.join(' '), x, y, w);
+            r = rects[i],
+            x = r.left,
+            y = view.height - r.top,
+            width = r.right - r.left,
+            height = r.top - r.bottom,
+            rect = svg.rect({
+                x, y, width, height,
+                stroke: `hsla(${i * 97 % 360}, 100%, 50%, 0.5)`,
+                'stroke-width': 1,
+                fill: 'transparent',
+            }),
+            tr = html.tr({}, [
+                i,
+                r.strings.join(' '),
+                x,
+                y,
+                width,
+                height,
+            ].map(txt => html.td({}, [txt.toString()])));
+
+        // color on hover
+        tr.addEventListener('mouseenter', e => rect.setAttribute('fill', 'yellow'), false);
+        tr.addEventListener('mouseleave', e => rect.setAttribute('fill', 'transparent'), false);
+
+        svgRoot.appendChild(rect);
+        tbody.appendChild(tr);
     }
 }, false);
