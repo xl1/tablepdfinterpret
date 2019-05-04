@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "build:doc": "parcel build example/index.html -d docs --public-url .",
-    "build:pdfjs": "cp node_modules/pdfjs-dist/build/pdf.worker.js docs"
+    "build:pdfjs": "cp node_modules/pdfjs-dist/build/pdf.worker.js docs",
+    "test": "mocha --require ts-node/register test/**/*.ts"
   },
   "author": "xl1",
   "license": "MIT",
@@ -18,9 +19,12 @@
   "devDependencies": {
     "@babel/core": "^7.4.4",
     "@types/gl-matrix": "^2.4.5",
+    "@types/mocha": "^5.2.6",
     "@types/node-fetch": "^2.3.2",
     "@types/pdfjs-dist": "file:types/pdfjs-dist",
+    "mocha": "^6.1.4",
     "parcel-bundler": "^1.12.3",
+    "ts-node": "^8.1.0",
     "typescript": "^3.4.4"
   },
   "browserslist": [
