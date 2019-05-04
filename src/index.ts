@@ -60,7 +60,7 @@ function* normalizeLines(lines: Iterable<Edge>): IterableIterator<Edge> {
     }
 }
 
-function separateToEdges(lines: Iterable<Edge>): Edge[] {
+export function separateToEdges(lines: Iterable<Edge>): Edge[] {
     function split(edge: Edge, p: vec2): [Edge, Edge] {
         return [
             { start: edge.start, end: p },
