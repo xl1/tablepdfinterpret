@@ -20,16 +20,19 @@ export default async function(source: Uint8Array|pdfjs.PDFDocumentProxy, {
     return [...annotateRects(rects, items)];
 }
 
-const EPSILON = 0.001;
+const EPSILON = 0.01;
 const THRESHOLD = 2;
 
 function equals(v: vec2, w: vec2) {
     return vec2.distance(v, w) < THRESHOLD;
 }
 
+function cross(v: vec2, w: vec2) {
+    return v[0] * w[1] - v[1] * w[0];
+}
+
 function getCrossingPoint(l1: Edge, l2: Edge): vec2|undefined {
     const
-        cross = (v: vec2, w: vec2) => v[0] * w[1] - v[1] * w[0],
         v0 = vec2.subtract(vec2.create(), l2.start, l1.start),
         v1 = vec2.subtract(vec2.create(), l1.end, l1.start),
         v2 = vec2.subtract(vec2.create(), l2.end, l2.start),
@@ -68,53 +71,62 @@ export function separateToEdges(lines: Iterable<Edge>): Edge[] {
         ];
     }
 
-    function next(c: Edge, results: Edge[]): [Edge[], Edge[]] {
-        if (equals(c.start, c.end)) {
-            // do not use c
-            return [[], results];
-        }
-        for (let i = 0; i < results.length; i++) {
-            const e = results[i];
-            if (equals(e.start, c.start) && equals(e.end, c.end)) {
-                // do not use c
-                return [[], results];
+    let results: Edge[] = [...lines];
+    while (true) {
+        const candidates: Edge[] = [];
+        const add = (l1: Edge) => {
+            if (equals(l1.start, l1.end)) {
+                return;
             }
-            const p = getCrossingPoint(e, c);
-            if (p) {
-                // remove e from result
-                results.splice(i, 1);
-                // add split(e) and split(c) to candidates
-                return [split(e, p).concat(split(c, p)), results];
+            if (candidates.some(l2 => equals(l1.start, l2.start) && equals(l1.end, l2.end))) {
+                return;
             }
-        }
-        results.push(c);
-        return [[], results];
-    }
+            candidates.push(l1);
+        };
 
-    let candidates: Edge[] = [...lines];
-    let results: Edge[] = [];
-    while (candidates.length) {
-        const newCandidates = [];
-        for (const c of candidates) {
-            const [add, newResults] = next(c, results);
-            newCandidates.push(...add);
-            results = newResults;
+        // filter short edges and the same edges
+        results.forEach(add);
+        results = [...candidates];
+
+        // split edges by the crossing points
+        for (const l1 of results) {
+            for (const l2 of results) {
+                const p = getCrossingPoint(l1, l2);
+                if (p) {
+                    split(l1, p).forEach(add);
+                    split(l2, p).forEach(add);
+                }
+            }
         }
-        candidates = newCandidates;
+        if (results.length === candidates.length) {
+            return results;
+        }
+        results = candidates;
     }
-    return results;
 }
 
 function* buildRects(edges: Edge[]): IterableIterator<Rect> {
-    for (const l1 of edges)
-    for (const l2 of edges)
-    if (equals(l1.start, l2.start))
-    for (const l3 of edges)
-    if (equals(l1.end, l3.start))
-    for (const l4 of edges)
-    if (equals(l2.end, l4.start))
-    if (equals(l3.end, l4.end))
-        yield { lb: l1.start, rt: l4.end };
+    for (let i = 0; i < edges.length; i++)
+    for (let j = i + 1; j < edges.length; j++) {
+        const l1 = edges[i];
+        const l2 = edges[j];
+
+        if (equals(l1.start, l2.start)) {
+            // area of rectangle >= THRESHOLD
+            const area = cross(
+                vec2.subtract(vec2.create(), l1.end, l1.start),
+                vec2.subtract(vec2.create(), l2.end, l2.start)
+            );
+            if (Math.abs(area) > THRESHOLD) {
+                for (const l3 of edges)
+                if (equals(l1.end, l3.start))
+                for (const l4 of edges)
+                if (equals(l2.end, l4.start))
+                if (equals(l3.end, l4.end))
+                    yield { lb: l1.start, rt:l4.end };
+            }
+        }
+    }
 }
 
 function* annotateRects(rects: Iterable<Rect>, texts: pdfjs.TextContentItem[])
