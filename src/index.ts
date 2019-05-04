@@ -108,6 +108,8 @@ export function separateToEdges(lines: Iterable<Edge>): Edge[] {
 export function* buildRects(edges: Edge[]): IterableIterator<Rect> {
     for (let i = 0; i < edges.length; i++)
     for (let j = i + 1; j < edges.length; j++) {
+        // ignore [l1, l2] and [l2, l1] order difference
+        // to treat [l1, l2, l3, l4] and [l2, l1, l4, l3] as the same Rect
         const l1 = edges[i];
         const l2 = edges[j];
 
@@ -123,7 +125,7 @@ export function* buildRects(edges: Edge[]): IterableIterator<Rect> {
                 for (const l4 of edges)
                 if (equals(l2.end, l4.start))
                 if (equals(l3.end, l4.end))
-                    yield { lb: l1.start, rt:l4.end };
+                    yield { lb: l1.start, rt: l4.end };
             }
         }
     }
@@ -156,6 +158,18 @@ function* extractLines(fnArray: OPS[], argsArray: any[]): IterableIterator<Edge>
     const matStack: mat2d[] = [];
     const vec = (x: number, y: number) =>
         vec2.transformMat2d(vec2.create(), vec2.fromValues(x, y), currentMatrix);
+    const rect = ([x, y, w, h]: number[]) => {
+        const p1 = vec(x + 0, y + 0);
+        const p2 = vec(x + w, y + 0);
+        const p3 = vec(x + 0, y + h);
+        const p4 = vec(x + y, w + h);
+        return [
+            { start: p1, end: p2 },
+            { start: p1, end: p3 },
+            { start: p2, end: p4 },
+            { start: p3, end: p4 }
+        ];
+    }
 
     for (let i = 0; i < fnArray.length; i++) {
         const args = argsArray[i];
@@ -182,15 +196,7 @@ function* extractLines(fnArray: OPS[], argsArray: any[]): IterableIterator<Edge>
                 currentPoint = p;
                 break;
             case OPS.rectangle:
-                const [x, y, w, h] = args;
-                const p1 = vec(x + 0, y + 0);
-                const p2 = vec(x + w, y + 0);
-                const p3 = vec(x + 0, y + h);
-                const p4 = vec(x + y, w + h);
-                yield { start: p1, end: p2 };
-                yield { start: p1, end: p3 };
-                yield { start: p2, end: p4 };
-                yield { start: p3, end: p4 };
+                yield* rect(args);
                 break;
             case OPS.constructPath:
                 const subFn: OPS[] = [...args[0]]; // clone
@@ -206,15 +212,7 @@ function* extractLines(fnArray: OPS[], argsArray: any[]): IterableIterator<Edge>
                         }
                         currentPoint = p;
                     } else if (fn === OPS.rectangle) {
-                        const [x, y, w, h] = subArgs.splice(0, 4);
-                        const p1 = vec(x + 0, y + 0);
-                        const p2 = vec(x + w, y + 0);
-                        const p3 = vec(x + 0, y + h);
-                        const p4 = vec(x + y, w + h);
-                        yield { start: p1, end: p2 };
-                        yield { start: p1, end: p3 };
-                        yield { start: p2, end: p4 };
-                        yield { start: p3, end: p4 };
+                        yield* rect(subArgs.splice(0, 4));
                     }
                 }
                 break;
