@@ -105,7 +105,7 @@ export function separateToEdges(lines: Iterable<Edge>): Edge[] {
     }
 }
 
-function* buildRects(edges: Edge[]): IterableIterator<Rect> {
+export function* buildRects(edges: Edge[]): IterableIterator<Rect> {
     for (let i = 0; i < edges.length; i++)
     for (let j = i + 1; j < edges.length; j++) {
         const l1 = edges[i];
