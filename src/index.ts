@@ -95,26 +95,33 @@ export function separateToEdges(lines: Iterable<Edge>): Edge[] {
 }
 
 export function* buildRects(edges: Edge[]): IterableIterator<Rect> {
-    for (let i = 0; i < edges.length; i++)
-    for (let j = i + 1; j < edges.length; j++) {
-        // ignore [l1, l2] and [l2, l1] order difference
-        // to treat [l1, l2, l3, l4] and [l2, l1, l4, l3] as the same Rect
-        const l1 = edges[i];
-        const l2 = edges[j];
+    const startPairs: [Edge, Edge][] = [];
+    const endPairs: [Edge, Edge][] = [];
 
-        if (equals(l1.start, l2.start)) {
+    for (let i = 0; i < edges.length; i++) {
+        for (let j = i + 1; j < edges.length; j++) {
+            const l1 = edges[i];
+            const l2 = edges[j];
             // area of rectangle >= THRESHOLD
             const area = cross(
                 vec2.subtract(vec2.create(), l1.end, l1.start),
                 vec2.subtract(vec2.create(), l2.end, l2.start)
             );
             if (Math.abs(area) > THRESHOLD) {
-                for (const l3 of edges)
-                if (equals(l1.end, l3.start))
-                for (const l4 of edges)
-                if (equals(l2.end, l4.start))
-                if (equals(l3.end, l4.end))
-                    yield { lb: l1.start, rt: l4.end };
+                if (equals(l1.start, l2.start)) {
+                    startPairs.push([l1, l2]);
+                } else if (equals(l1.end, l2.end)) {
+                    endPairs.push([l1, l2]);
+                }
+            }
+        }
+    }
+
+    for (const [l1, l2] of startPairs) {
+        for (const [l3, l4] of endPairs) {
+            if (equals(l1.end, l3.start) && equals(l2.end, l4.start) ||
+                equals(l1.end, l4.start) && equals(l2.end, l3.start)) {
+                yield { lb: l1.start, rt: l4.end };
             }
         }
     }
