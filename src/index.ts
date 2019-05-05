@@ -64,45 +64,33 @@ function* normalizeLines(lines: Iterable<Edge>): IterableIterator<Edge> {
 }
 
 export function separateToEdges(lines: Iterable<Edge>): Edge[] {
-    function split(edge: Edge, p: vec2): [Edge, Edge] {
-        return [
-            { start: edge.start, end: p },
-            { start: p, end: edge.end }
-        ];
-    }
+    const candidates: Edge[] = [];
+    const add = (l1: Edge) => {
+        if (equals(l1.start, l1.end)) {
+            return;
+        }
+        if (candidates.some(l2 => equals(l1.start, l2.start) && equals(l1.end, l2.end))) {
+            return;
+        }
+        candidates.push(l1);
+    };
 
-    let results: Edge[] = [...lines];
-    while (true) {
-        const candidates: Edge[] = [];
-        const add = (l1: Edge) => {
-            if (equals(l1.start, l1.end)) {
-                return;
-            }
-            if (candidates.some(l2 => equals(l1.start, l2.start) && equals(l1.end, l2.end))) {
-                return;
-            }
-            candidates.push(l1);
-        };
+    // filter short edges and duplicated edges
+    for (const l of lines) add(l);
 
-        // filter short edges and the same edges
-        results.forEach(add);
-        results = [...candidates];
-
-        // split edges by the crossing points
-        for (const l1 of results) {
-            for (const l2 of results) {
-                const p = getCrossingPoint(l1, l2);
-                if (p) {
-                    split(l1, p).forEach(add);
-                    split(l2, p).forEach(add);
-                }
+    const len = candidates.length;
+    // split edges by the crossing points
+    for (let i = 0; i < candidates.length; i++) {
+        for (let j = 0; j < len; j++) {
+            const l1 = candidates[i], l2 = candidates[j];
+            const p = getCrossingPoint(l1, l2);
+            if (p) {
+                add({ start: l1.start, end: p });
+                add({ start: p, end: l1.end });
             }
         }
-        if (results.length === candidates.length) {
-            return results;
-        }
-        results = candidates;
     }
+    return candidates;
 }
 
 export function* buildRects(edges: Edge[]): IterableIterator<Rect> {
