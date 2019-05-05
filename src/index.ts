@@ -24,7 +24,8 @@ const EPSILON = 0.01;
 const THRESHOLD = 2;
 
 function equals(v: vec2, w: vec2) {
-    return vec2.distance(v, w) < THRESHOLD;
+    return Math.abs(v[0] - w[0]) < THRESHOLD
+        && Math.abs(v[1] - w[1]) < THRESHOLD;
 }
 
 function cross(v: vec2, w: vec2) {
