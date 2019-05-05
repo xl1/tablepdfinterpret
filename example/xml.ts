@@ -1,10 +1,10 @@
-type ElementFactory =
-    (attrs?: { [key: string]: any }, children?: (Node|string)[]) => Element;
+type ElementFactory<T extends Element> =
+    (attrs?: { [key: string]: any }, children?: (Node|string)[]) => T;
 
-export default function (createElement: (key: string) => Element) {
-    const obj: { [key: string]: ElementFactory } = {};
+export default function <T extends Element>(createElement: (key: string) => T) {
+    const obj: { [key: string]: ElementFactory<T> } = {};
     return new Proxy(obj, {
-        get(target, key: string): ElementFactory {
+        get(target, key: string): ElementFactory<T> {
             return (attrs = {}, children = []) => {
                 const node = createElement(key);
                 for (const attr in attrs) {
