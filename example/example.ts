@@ -28,6 +28,7 @@ loadButton.addEventListener('click', async e => {
     e.preventDefault();
     if (!fileInput.files || !fileInput.files.length) return;
 
+    console.time();
     const
         pageNum = +pageNumber.value,
         file = fileInput.files[0],
@@ -74,4 +75,5 @@ loadButton.addEventListener('click', async e => {
         svgRoot.appendChild(rect);
         tbody.appendChild(tr);
     }
+    console.timeEnd();
 }, false);
