@@ -2,8 +2,8 @@ import * as pdfjs from 'pdfjs-dist';
 import pdftorect from '../src/index';
 import xml from './xml';
 
-const svg = xml(key => document.createElementNS('http://www.w3.org/2000/svg', key));
-const html = xml(key => document.createElement(key));
+const svg = xml<SVGElementTagNameMap>(key => document.createElementNS('http://www.w3.org/2000/svg', key));
+const html = xml<HTMLElementTagNameMap>(key => document.createElement(key));
 
 pdfjs.GlobalWorkerOptions.workerSrc = './pdf.worker.js';
 
