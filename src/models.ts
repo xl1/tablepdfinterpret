@@ -17,3 +17,8 @@ export interface TextRect {
     right: number;
     top: number;
 }
+
+export interface Neighbor {
+    up?: vec2;
+    right?: vec2;
+}

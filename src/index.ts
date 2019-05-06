@@ -1,7 +1,8 @@
 import { vec2, mat2d } from 'gl-matrix';
 import * as pdfjs from 'pdfjs-dist';
-import { Edge, Rect, TextRect } from './models';
+import { Edge, Rect, TextRect, Neighbor } from './models';
 import OPS from './ops';
+import Sorted from "./Sorted";
 
 export default async function(source: Uint8Array|pdfjs.PDFDocumentProxy, {
     pageNumber = 1,
@@ -14,9 +15,9 @@ export default async function(source: Uint8Array|pdfjs.PDFDocumentProxy, {
         { fnArray, argsArray } = await page.getOperatorList(),
         { items } = await page.getTextContent(),
         lines = extractLines(fnArray, argsArray),
-        normalized = normalizeLines(lines),
-        edges = separateToEdges(normalized),
-        rects = buildRects(edges);
+        [vertical, horizontal] = normalizeLines(lines),
+        graph = constructGraph(vertical, horizontal),
+        rects = buildRects(graph);
     return [...annotateRects(rects, items)];
 }
 
@@ -46,82 +47,104 @@ function getCrossingPoint(l1: Edge, l2: Edge): vec2|undefined {
     return;
 }
 
-function* normalizeLines(lines: Iterable<Edge>): IterableIterator<Edge> {
+function normalizeLines(lines: Iterable<Edge>): [Edge[], Edge[]] {
+    const vertical: Edge[] = [];
+    const horizontal: Edge[] = [];
     for (const line of lines) {
-        if (Math.abs(line.start[0] - line.end[0]) < THRESHOLD) {
-            // vertical line
-            // order by Y
-            yield line.start[1] < line.end[1]
-                ? line
-                : { start: line.end, end: line.start };
-        } else if (Math.abs(line.start[1] - line.end[1]) < THRESHOLD) {
-            // horizontal line
-            // order by X
-            yield line.start[0] < line.end[0]
-                ? line
-                : { start: line.end, end: line.start };
+        const dx = line.start[0] - line.end[0];
+        const dy = line.start[1] - line.end[1];
+        if (Math.abs(dx) < THRESHOLD) {
+            vertical.push(dy < 0 ? line : { start: line.end, end: line.start });
+        } else if (Math.abs(dy) < THRESHOLD) {
+            horizontal.push(dx < 0 ? line : { start: line.end, end: line.start });
         }
     }
+    return [vertical, horizontal];
 }
 
-export function separateToEdges(lines: Iterable<Edge>): Edge[] {
-    const candidates: Edge[] = [];
-    const add = (l1: Edge) => {
-        if (equals(l1.start, l1.end)) {
-            return;
-        }
-        if (candidates.some(l2 => equals(l1.start, l2.start) && equals(l1.end, l2.end))) {
-            return;
-        }
-        candidates.push(l1);
-    };
+function constructGraph(vertical: Iterable<Edge>, horizontal: Iterable<Edge>): Map<vec2, Neighbor> {
+    const result = new Map<vec2, Neighbor>();
 
-    // filter short edges and duplicated edges
-    for (const l of lines) add(l);
-
-    const len = candidates.length;
-    // split edges by the crossing points
-    for (let i = 0; i < candidates.length; i++) {
-        for (let j = 0; j < len; j++) {
-            const l1 = candidates[i], l2 = candidates[j];
-            const p = getCrossingPoint(l1, l2);
-            if (p) {
-                add({ start: l1.start, end: p });
-                add({ start: p, end: l1.end });
+    for (const v of vertical) {
+        const ps = new Sorted<vec2>();
+        for (const h of horizontal) {
+            const p = getCrossingPoint(v, h);
+            if (p) ps.add(p[1], p);
+        }
+        for (let i = 0, j = 1; j < ps.values.length; j++) {
+            if (ps.keys[j] - ps.keys[i] > THRESHOLD) {
+                result.set(ps.values[i], { up: ps.values[j] });
+                i = j;
             }
         }
     }
-    return candidates;
+
+    for (const h of horizontal) {
+        const ps = new Sorted<vec2>();
+        for (const v of vertical) {
+            const p = getCrossingPoint(v, h);
+            if (p) ps.add(p[0], p);
+        }
+        for (let i = 0, j = 1; j < ps.values.length; j++) {
+            if (ps.keys[j] - ps.keys[i] > THRESHOLD) {
+                result.set(ps.values[i], { right: ps.values[j] });
+                i = j;
+            }
+        }
+    }
+
+    // merge same nodes
+    const filtered = new Map<vec2, Neighbor>();
+    for (let [p, value] of result) {
+        for (const [q, newValue] of filtered) {
+            if (equals(p, q)) {
+                p = q;
+                value = { ...value, ...newValue };
+                break;
+            }
+        }
+        filtered.set(p, value);
+    }
+
+    return filtered;
 }
 
-export function* buildRects(edges: Edge[]): IterableIterator<Rect> {
-    const startPairs: [Edge, Edge][] = [];
-    const endPairs: [Edge, Edge][] = [];
+export function* buildRects(graph: Map<vec2, Neighbor>): IterableIterator<Rect> {
+    function get(p: vec2): Neighbor|undefined {
+        for (const [k, v] of graph) {
+            if (equals(k, p)) return v;
+        }
+    }
 
-    for (let i = 0; i < edges.length; i++) {
-        for (let j = i + 1; j < edges.length; j++) {
-            const l1 = edges[i];
-            const l2 = edges[j];
-            // area of rectangle >= THRESHOLD
-            const area = cross(
-                vec2.subtract(vec2.create(), l1.end, l1.start),
-                vec2.subtract(vec2.create(), l2.end, l2.start)
-            );
-            if (Math.abs(area) > THRESHOLD) {
-                if (equals(l1.start, l2.start)) {
-                    startPairs.push([l1, l2]);
-                } else if (equals(l1.end, l2.end)) {
-                    endPairs.push([l1, l2]);
+    function findNext(
+        p: vec2,
+        next: (n: Neighbor) => vec2|undefined,
+        predicate: (p: vec2, n: Neighbor|undefined) => boolean
+    ) {
+        for (const q of enumerateAll(p, next)) {
+            if (predicate(q, get(q))) return q;
+        }
+    }
+
+    function* enumerateAll(p: vec2|undefined, next: (n: Neighbor) => vec2|undefined) {
+        while (p) {
+            yield p;
+            const neighbor = get(p);
+            if (!neighbor) break;
+            p = next(neighbor);
+        }
+    }
+
+    for (const [lb, { up, right }] of graph) {
+        if (up && right) {
+            const rb = findNext(right, n => n.right, (p, n) => !!(n && n.up));
+            const lt = findNext(up, n => n.up, (p, n) => !!(n && n.right));
+            if (rb && lt) {
+                const rightLine = [...enumerateAll(rb, n => n.up)];
+                const rt = findNext(lt, n => n.right, p => rightLine.some(q => equals(p, q)));
+                if (rt) {
+                    yield { lb, rt };
                 }
-            }
-        }
-    }
-
-    for (const [l1, l2] of startPairs) {
-        for (const [l3, l4] of endPairs) {
-            if (equals(l1.end, l3.start) && equals(l2.end, l4.start) ||
-                equals(l1.end, l4.start) && equals(l2.end, l3.start)) {
-                yield { lb: l1.start, rt: l4.end };
             }
         }
     }
