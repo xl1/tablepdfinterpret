@@ -66,16 +66,16 @@ describe(separateToEdges.name, () => {
 
     it('should split crossing line fragments', () => {
         const input = [
-            [  0,   0, 200, 200],
-            [200,   0,   0, 200]
+            [  0, 100, 200, 100],
+            [100,   0, 100, 200]
         ].map(toEdge);
         const expect = [
-            [  0,   0, 200, 200],
-            [200,   0,   0, 200],
-            [  0,   0, 100, 100],
-            [100, 100, 200, 200],
-            [200,   0, 100, 100],
-            [100, 100,   0, 200]
+            [  0, 100, 200, 100],
+            [100,   0, 100, 200],
+            [  0, 100, 100, 100],
+            [100, 100, 200, 100],
+            [100,   0, 100, 100],
+            [100, 100, 100, 200]
         ].map(toEdge);
         const result = separateToEdges(input);
         assert.deepStrictEqual(new Set(result), new Set(expect));
