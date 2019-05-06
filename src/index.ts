@@ -61,11 +61,18 @@ export function separateToEdges(vertical: Iterable<Edge>, horizontal: Iterable<E
     for (const e of vertical) add(e, verticalResult);
     for (const e of horizontal) add(e, horizontalResult);
     for (const v of verticalResult) {
-        for (const h of horizontalResult) {
+        for (const h of horizontal) {
             const p = getCrossingPoint(v, h);
             if (p) {
                 add({ start: v.start, end: p }, verticalResult);
                 add({ start: p, end: v.end }, verticalResult);
+            }
+        }
+    }
+    for (const v of vertical) {
+        for (const h of horizontalResult) {
+            const p = getCrossingPoint(v, h);
+            if (p) {
                 add({ start: h.start, end: p }, horizontalResult);
                 add({ start: p, end: h.end }, horizontalResult);
             }
