@@ -15,8 +15,8 @@ export default async function(source: Uint8Array|pdfjs.PDFDocumentProxy, {
         { items } = await page.getTextContent(),
         lines = extractLines(fnArray, argsArray),
         normalized = normalizeLines(lines),
-        edges = separateToEdges(normalized),
-        rects = buildRects(edges);
+        edges = separateToEdges(...normalized),
+        rects = buildRects(...edges);
     return [...annotateRects(rects, items)];
 }
 
@@ -46,81 +46,63 @@ function getCrossingPoint(l1: Edge, l2: Edge): vec2|undefined {
     return;
 }
 
-function* normalizeLines(lines: Iterable<Edge>): IterableIterator<Edge> {
+function normalizeLines(lines: Iterable<Edge>): [Edge[], Edge[]] {
+    const vertical: Edge[] = [];
+    const horizontal: Edge[] = [];
     for (const line of lines) {
-        if (Math.abs(line.start[0] - line.end[0]) < THRESHOLD) {
-            // vertical line
-            // order by Y
-            yield line.start[1] < line.end[1]
-                ? line
-                : { start: line.end, end: line.start };
-        } else if (Math.abs(line.start[1] - line.end[1]) < THRESHOLD) {
-            // horizontal line
-            // order by X
-            yield line.start[0] < line.end[0]
-                ? line
-                : { start: line.end, end: line.start };
+        const dx = line.start[0] - line.end[0];
+        const dy = line.start[1] - line.end[1];
+        if (Math.abs(dx) < THRESHOLD) {
+            vertical.push(dy < 0 ? line : { start: line.end, end: line.start });
+        } else if (Math.abs(dy) < THRESHOLD) {
+            horizontal.push(dx < 0 ? line : { start: line.end, end: line.start });
         }
     }
+    return [vertical, horizontal];
 }
 
-export function separateToEdges(lines: Iterable<Edge>): Edge[] {
-    const candidates: Edge[] = [];
-    const add = (l1: Edge) => {
-        if (equals(l1.start, l1.end)) {
-            return;
-        }
-        if (candidates.some(l2 => equals(l1.start, l2.start) && equals(l1.end, l2.end))) {
-            return;
-        }
-        candidates.push(l1);
+export function separateToEdges(vertical: Iterable<Edge>, horizontal: Iterable<Edge>): [Edge[], Edge[]] {
+    const verticalResult: Edge[] = [];
+    const horizontalResult: Edge[] = [];
+    const add = (e: Edge, array: Edge[]) => {
+        if (equals(e.start, e.end)) return;
+        if (array.some(x => equals(e.start, x.start) && equals(e.end, x.end))) return;
+        array.push(e);
     };
 
-    // filter short edges and duplicated edges
-    for (const l of lines) add(l);
-
-    const len = candidates.length;
-    // split edges by the crossing points
-    for (let i = 0; i < candidates.length; i++) {
-        for (let j = 0; j < len; j++) {
-            const l1 = candidates[i], l2 = candidates[j];
-            const p = getCrossingPoint(l1, l2);
+    for (const e of vertical) add(e, verticalResult);
+    for (const e of horizontal) add(e, horizontalResult);
+    for (const v of verticalResult) {
+        for (const h of horizontalResult) {
+            const p = getCrossingPoint(v, h);
             if (p) {
-                add({ start: l1.start, end: p });
-                add({ start: p, end: l1.end });
+                add({ start: v.start, end: p }, verticalResult);
+                add({ start: p, end: v.end }, verticalResult);
+                add({ start: h.start, end: p }, horizontalResult);
+                add({ start: p, end: h.end }, horizontalResult);
             }
         }
     }
-    return candidates;
+    return [verticalResult, horizontalResult];
 }
 
-export function* buildRects(edges: Edge[]): IterableIterator<Rect> {
+export function* buildRects(vertical: Edge[], horizontal: Edge[]): IterableIterator<Rect> {
     const startPairs: [Edge, Edge][] = [];
     const endPairs: [Edge, Edge][] = [];
 
-    for (let i = 0; i < edges.length; i++) {
-        for (let j = i + 1; j < edges.length; j++) {
-            const l1 = edges[i];
-            const l2 = edges[j];
-            // area of rectangle >= THRESHOLD
-            const area = cross(
-                vec2.subtract(vec2.create(), l1.end, l1.start),
-                vec2.subtract(vec2.create(), l2.end, l2.start)
-            );
-            if (Math.abs(area) > THRESHOLD) {
-                if (equals(l1.start, l2.start)) {
-                    startPairs.push([l1, l2]);
-                } else if (equals(l1.end, l2.end)) {
-                    endPairs.push([l1, l2]);
-                }
+    for (const l1 of vertical) {
+        for (const l2 of horizontal) {
+            if (equals(l1.start, l2.start)) {
+                startPairs.push([l1, l2]);
+            } else if (equals(l1.end, l2.end)) {
+                endPairs.push([l1, l2]);
             }
         }
     }
 
     for (const [l1, l2] of startPairs) {
         for (const [l3, l4] of endPairs) {
-            if (equals(l1.end, l3.start) && equals(l2.end, l4.start) ||
-                equals(l1.end, l4.start) && equals(l2.end, l3.start)) {
+            if (equals(l1.end, l4.start) && equals(l2.end, l3.start)) {
                 yield { lb: l1.start, rt: l4.end };
             }
         }

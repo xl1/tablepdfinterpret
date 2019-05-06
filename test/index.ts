@@ -14,16 +14,18 @@ const toRect = ([s, t, u, v]: number[]): Rect => ({
 
 describe(buildRects.name, () => {
     it('should build 1 rect', () => {
-        const input = [
+        const vertical = [
             [  0,   0,   0, 100],
+            [100,   0, 100, 100],
+        ].map(toEdge);
+        const horizontal = [
             [  0,   0, 100,   0],
             [  0, 100, 100, 100],
-            [100,   0, 100, 100],
         ].map(toEdge);
         const expect = [
             [  0,   0, 100, 100]
         ].map(toRect);
-        const result = [...buildRects(input)];
+        const result = [...buildRects(vertical, horizontal)];
         assert.deepStrictEqual(result, expect);
     });
 
@@ -37,48 +39,59 @@ describe(buildRects.name, () => {
         |  |  |--|
         ---------- 0
         */
-        const input = [
-            [  0, 500, 300, 500],
+        const vertical = [
             [300,   0, 300, 500],
-            [  0,   0, 300,   0],
             [  0,   0,   0, 500],
             [100,   0, 100, 500],
-            [200,   0, 200, 500],
+            [200,   0, 200, 500]
+        ].map(toEdge);
+        const horizontal = [
+            [  0, 500, 300, 500],
+            [  0,   0, 300,   0],
             [200, 400, 300, 400],
             [100, 300, 300, 300],
             [200, 200, 300, 200],
             [200, 100, 300, 100]
         ].map(toEdge);
-        const result = [...buildRects(separateToEdges(input))];
+        const result = [...buildRects(...separateToEdges(vertical, horizontal))];
         assert.equal(result.length, 24);
     });
 });
 
 describe(separateToEdges.name, () => {
     it('should passthrough uncrossed line fragments', () => {
-        const input = [
+        const vertical = [
             [  0,   0,   0, 100],
             [100,   0, 100, 100]
         ].map(toEdge);
-        const result = separateToEdges(input);
-        assert.deepStrictEqual(result, input);
+        const horizontal = [
+            // nothing
+        ].map(toEdge);
+        const [v, h] = separateToEdges(vertical, horizontal);
+        assert.deepStrictEqual(v, vertical);
+        assert.deepStrictEqual(h, horizontal);
     });
 
     it('should split crossing line fragments', () => {
-        const input = [
-            [  0, 100, 200, 100],
-            [100,   0, 100, 200]
+        const vertical = [
+            [100, 0, 100, 200]
         ].map(toEdge);
-        const expect = [
-            [  0, 100, 200, 100],
+        const horizontal = [
+            [0, 100, 200, 100]
+        ].map(toEdge);
+        const verticalExpect = [
             [100,   0, 100, 200],
-            [  0, 100, 100, 100],
-            [100, 100, 200, 100],
             [100,   0, 100, 100],
             [100, 100, 100, 200]
         ].map(toEdge);
-        const result = separateToEdges(input);
-        assert.deepStrictEqual(new Set(result), new Set(expect));
+        const horizontalExpect = [
+            [  0, 100, 200, 100],
+            [  0, 100, 100, 100],
+            [100, 100, 200, 100]
+        ].map(toEdge);
+        const [v, h] = separateToEdges(vertical, horizontal);
+        assert.deepStrictEqual(new Set(v), new Set(verticalExpect));
+        assert.deepStrictEqual(new Set(h), new Set(horizontalExpect));
     });
 
     it ('should create 52 fragments', () => {
@@ -91,19 +104,22 @@ describe(separateToEdges.name, () => {
         |  |  |--|
         ---------- 0
         */
-        const input = [
-            [  0, 500, 300, 500],
+        const vertical = [
             [300,   0, 300, 500],
-            [  0,   0, 300,   0],
             [  0,   0,   0, 500],
             [100,   0, 100, 500],
-            [200,   0, 200, 500],
+            [200,   0, 200, 500]
+        ].map(toEdge);
+        const horizontal = [
+            [  0, 500, 300, 500],
+            [  0,   0, 300,   0],
             [200, 400, 300, 400],
             [100, 300, 300, 300],
             [200, 200, 300, 200],
             [200, 100, 300, 100]
         ].map(toEdge);
-        const result = separateToEdges(input);
-        assert.equal(result.length, 52);
+        const [v, h] = separateToEdges(vertical, horizontal);
+        assert.equal(v.length, 34);
+        assert.equal(h.length, 18)
     });
 });
