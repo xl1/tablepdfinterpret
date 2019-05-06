@@ -20,7 +20,6 @@ export default async function(source: Uint8Array|pdfjs.PDFDocumentProxy, {
     return [...annotateRects(rects, items)];
 }
 
-const EPSILON = 0.01;
 const THRESHOLD = 2;
 
 function equals(v: vec2, w: vec2) {
@@ -28,22 +27,11 @@ function equals(v: vec2, w: vec2) {
         && Math.abs(v[1] - w[1]) < THRESHOLD;
 }
 
-function cross(v: vec2, w: vec2) {
-    return v[0] * w[1] - v[1] * w[0];
-}
-
-function getCrossingPoint(l1: Edge, l2: Edge): vec2|undefined {
-    const
-        v0 = vec2.subtract(vec2.create(), l2.start, l1.start),
-        v1 = vec2.subtract(vec2.create(), l1.end, l1.start),
-        v2 = vec2.subtract(vec2.create(), l2.end, l2.start),
-        t1 = cross(v2, v0) / cross(v2, v1),
-        t2 = cross(v1, v0) / cross(v2, v1);
-    if ((-EPSILON < t1 && t1 < 1 + EPSILON && 0 < t2 && t2 < 1) ||
-        (-EPSILON < t2 && t2 < 1 + EPSILON && 0 < t1 && t1 < 1)) {
-        return vec2.scaleAndAdd(vec2.create(), l1.start, v1, t1);
+function getCrossingPoint(v: Edge, h: Edge): vec2|undefined {
+    if (v.start[1] - THRESHOLD < h.start[1] && h.start[1] < v.end[1] + THRESHOLD &&
+        h.start[0] - THRESHOLD < v.start[0] && v.start[0] < h.end[0] + THRESHOLD) {
+        return vec2.fromValues(v.start[0], h.start[1]);
     }
-    return;
 }
 
 function normalizeLines(lines: Iterable<Edge>): [Edge[], Edge[]] {
