@@ -62,7 +62,7 @@ function normalizeLines(lines: Iterable<Edge>): [Edge[], Edge[]] {
     return [vertical, horizontal];
 }
 
-function constructGraph(vertical: Iterable<Edge>, horizontal: Iterable<Edge>): Map<vec2, Neighbor> {
+function constructGraph(vertical: Edge[], horizontal: Edge[]): Map<vec2, Neighbor> {
     const result = new Map<vec2, Neighbor>();
 
     for (const v of vertical) {
