@@ -12,20 +12,19 @@
   "author": "xl1",
   "license": "MIT",
   "dependencies": {
-    "gl-matrix": "^3.0.0",
-    "node-fetch": "^2.3.0",
-    "pdfjs-dist": "^2.0.943"
+    "gl-matrix": "^3.1.0",
+    "node-fetch": "^2.6.0",
+    "pdfjs-dist": "^2.2.228"
   },
   "devDependencies": {
-    "@babel/core": "^7.4.4",
     "@types/gl-matrix": "^2.4.5",
-    "@types/mocha": "^5.2.6",
-    "@types/node-fetch": "^2.3.2",
+    "@types/mocha": "^5.2.7",
+    "@types/node-fetch": "^2.5.2",
     "@types/pdfjs-dist": "file:types/pdfjs-dist",
-    "mocha": "^6.1.4",
-    "parcel-bundler": "^1.12.3",
-    "ts-node": "^8.1.0",
-    "typescript": "^3.4.4"
+    "mocha": "^6.2.2",
+    "parcel-bundler": "^1.12.4",
+    "ts-node": "^8.4.1",
+    "typescript": "^3.6.4"
   },
   "browserslist": [
     "since 2019"
