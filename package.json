@@ -6,24 +6,21 @@
   "scripts": {
     "build": "tsc",
     "build:doc": "parcel build example/index.html -d docs --public-url .",
-    "build:pdfjs": "cp node_modules/pdfjs-dist/build/pdf.worker.js docs",
-    "test": "mocha --require ts-node/register test/**/*.ts"
+    "build:pdfjs": "cp node_modules/pdfjs-dist/build/pdf.worker.js docs"
   },
   "author": "xl1",
   "license": "MIT",
   "dependencies": {
-    "gl-matrix": "^3.2.1",
+    "gl-matrix": "^3.3.0",
     "node-fetch": "^2.6.0",
-    "pdfjs-dist": "^2.2.228"
+    "pdfjs-dist": "^2.3.200"
   },
   "devDependencies": {
     "@types/gl-matrix": "^2.4.5",
-    "@types/mocha": "^5.2.7",
     "@types/node-fetch": "^2.5.5",
     "@types/pdfjs-dist": "file:types/pdfjs-dist",
-    "mocha": "^6.2.2",
     "parcel-bundler": "^1.12.4",
-    "ts-node": "^8.6.2",
+    "ts-node": "^8.8.2",
     "typescript": "^3.8.3"
   },
   "browserslist": [
