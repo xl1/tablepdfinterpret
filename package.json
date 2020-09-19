@@ -12,16 +12,14 @@
   "license": "MIT",
   "dependencies": {
     "gl-matrix": "^3.3.0",
-    "node-fetch": "^2.6.0",
-    "pdfjs-dist": "^2.4.456"
+    "pdfjs-dist": "^2.5.207"
   },
   "devDependencies": {
-    "@types/gl-matrix": "^2.4.5",
-    "@types/node-fetch": "^2.5.7",
+    "@types/gl-matrix": "^3.2.0",
     "@types/pdfjs-dist": "file:types/pdfjs-dist",
     "parcel-bundler": "^1.12.4",
-    "ts-node": "^8.10.2",
-    "typescript": "^3.9.7"
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.3"
   },
   "browserslist": [
     "since 2019"
