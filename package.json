@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "build:doc": "parcel build example/index.html -d docs --public-url .",
+    "build:doc": "esbuild example/example.ts --bundle --minify --sourcemap --outfile=docs/example.js",
     "build:pdfjs": "cp node_modules/pdfjs-dist/build/pdf.worker.js docs"
   },
   "author": "xl1",
@@ -17,11 +17,7 @@
   "devDependencies": {
     "@types/gl-matrix": "^3.2.0",
     "@types/pdfjs-dist": "file:types/pdfjs-dist",
-    "parcel-bundler": "^1.12.4",
-    "ts-node": "^9.0.0",
+    "esbuild": "^0.7.2",
     "typescript": "^4.0.3"
-  },
-  "browserslist": [
-    "last 2 Chrome versions"
-  ]
+  }
 }
