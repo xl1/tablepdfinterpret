@@ -53,9 +53,7 @@ export interface PDFOperatorList {
 
 export interface PDFPageProxy {
     pageNumber: number;
-
-    // getViewPort interface will change on 2.1 https://github.com/mozilla/pdf.js/pull/10369
-    getViewport(scale: number, rotate?: number, dontFlip?: boolean): PDFPageViewport;
+    getViewport(params?: { scale: number, rotate?: number, dontFlip?: boolean }): PDFPageViewport;
     getAnnotations(params?: { intent: 'display'|'print' }): Promise<any>;
     render(params: RenderParameters): PDFRenderTask;
     getTextContent(): Promise<TextContent>;

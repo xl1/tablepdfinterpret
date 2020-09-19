@@ -36,7 +36,7 @@ loadButton.addEventListener('click', async e => {
         pdf = await pdfjs.getDocument(new Uint8Array(ab)).promise,
         page = await pdf.getPage(pageNum),
         rects = await pdftorect(pdf, { pageNumber: pageNum }),
-        view = page.getViewport(1),
+        view = page.getViewport({ scale: 1 }),
         svgRoot = svg.svg({
             viewBox: `0 0 ${view.width} ${view.height}`,
             style: `width: ${view.width}px; height: ${view.height}px`
